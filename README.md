@@ -60,7 +60,7 @@ var (
 ## States
 
 [Byte State](states/bytestate), [Rune State](states/charstate) or [Token State](states/tokstate) are supported as parsing input.
-And you can write your input state by implementing `State` interface.
+And you can write your input state by implementing [`State`](state.go#L5) interface.
 
 ## Examples 
 
