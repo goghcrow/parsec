@@ -9,7 +9,7 @@ Document of [Combinators](https://hackage.haskell.org/package/parsec-3.1.15.1/do
 Document of [BuildExpressionParser](https://hackage.haskell.org/package/parsec-3.1.15.1/docs/Text-Parsec-Expr.html)
 
 ```go
-func Return(v interface{}) Parser
+func Return(x interface{}) Parser
 func Fail(f string, a ...interface{}) Parser
 func Map(p Parser, f func(interface{}) interface{}) Parser
 func Bind(p Parser, f func(interface{}) Parser) Parser
@@ -25,7 +25,7 @@ func Mid(start, p, end Parser) Parser
 func Left(l, r Parser) Parser
 func Right(l, r Parser) Parser
 func Trim(p, cut Parser) Parser
-func Option(p Parser, v interface{}) Parser
+func Option(p Parser, x interface{}) Parser
 func Optional(p Parser) Parser
 func SkipMany(p Parser) Parser
 func SkipMany1(p Parser) Parser

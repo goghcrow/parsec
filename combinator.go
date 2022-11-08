@@ -21,9 +21,9 @@ var (
 	Rep     = Count
 )
 
-func Return(v interface{}) Parser {
+func Return(x interface{}) Parser {
 	return parser(func(s State) (interface{}, error) {
-		return v, nil
+		return x, nil
 	})
 }
 
@@ -151,7 +151,7 @@ func Trim(p, cut Parser) Parser { return Mid(Many(cut), p, Many(cut)) }
 
 // Option 尝试 p,失败不消耗 state, 成功返回 p 的返回值, 失败返回默认值 v
 // p <|> return x
-func Option(p Parser, v interface{}) Parser { return Either(p, Return(v)) }
+func Option(p Parser, x interface{}) Parser { return Either(p, Return(x)) }
 
 // Optional 尝试应用 p, 成功则消耗 state, 丢弃返回值
 // do{ _ <- p; return ()} <|> return ()
