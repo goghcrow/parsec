@@ -59,8 +59,12 @@ var (
 ```
 ## States
 
-[Byte State](states/bytestate), [Rune State](states/charstate) or [Token State](states/tokstate) are supported as parsing input.
+As parametric input stream, [Byte State](states/bytestate), [Rune State](states/charstate) or [Token State](states/tokstate) are builtin supporting.
 And you can write your input state by implementing [`State`](state.go#L5) interface.
+
+Although parsec can implement both lexer and parser, and can even directly calculate the results at once, 
+it is still recommended to use token state and generate ast through `apply` function, which will have clearer responsibilities.
+
 
 ## Examples 
 
