@@ -1,7 +1,9 @@
 //go:build parsec_iter
 // +build parsec_iter
 
-package parsec
+package legacy
+
+import . "github.com/goghcrow/parsec"
 
 // 一些展开或者迭代的版本, 性能会好点
 
@@ -167,25 +169,6 @@ func SepBy1(p, sep Parser) Parser {
 
 //func Skip1(p Parser) Parser { return p.Map(func(v interface{}) interface{} { return nil }) }
 
-//func Str(str string) Parser {
-//	return parser(func(s_ State) (interface{}, error) {
-//		s := s_.(*StrState)
-//		loc := s.Save()
-//		cnt := utf8.RuneCountInString(str)
-//		if len(s.seq) < s.Pos+cnt {
-//			return nil, Trap(loc, "expect `%s` actual end of input", str)
-//		}
-//		if str == string(s.seq[s.Pos:s.Pos+cnt]) {
-//			for _, r := range []rune(str) {
-//				s.move(r)
-//			}
-//			return str, nil
-//		} else {
-//			return nil, Trap(loc, "expect `%s`", str)
-//		}
-//	})
-//}
-
 func ManyTill(p, end Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
 		loc := s.Save()
@@ -205,3 +188,23 @@ func ManyTill(p, end Parser) Parser {
 		}
 	})
 }
+
+// 这个需要 rune 和 byte 两个版本
+//func Str(str string) Parser {
+//	return parser(func(s_ State) (interface{}, error) {
+//		s := s_.(*StrState)
+//		loc := s.Save()
+//		cnt := utf8.RuneCountInString(str)
+//		if len(s.seq) < s.Pos+cnt {
+//			return nil, Trap(loc, "expect `%s` actual end of input", str)
+//		}
+//		if str == string(s.seq[s.Pos:s.Pos+cnt]) {
+//			for _, r := range []rune(str) {
+//				s.move(r)
+//			}
+//			return str, nil
+//		} else {
+//			return nil, Trap(loc, "expect `%s`", str)
+//		}
+//	})
+//}

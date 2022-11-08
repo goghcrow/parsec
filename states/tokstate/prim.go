@@ -1,13 +1,9 @@
-package toks
+package tokstate
 
 import (
 	"github.com/goghcrow/go-parsec/lexer"
 	"github.com/goghcrow/parsec"
 )
-
-// ----------------------------------------------------------------
-// Primitive Token Parsers
-// ----------------------------------------------------------------
 
 // ----------------------------------------------------------------
 // Primitive

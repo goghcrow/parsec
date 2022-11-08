@@ -1,21 +1,24 @@
 package example
 
 import (
-	. "github.com/goghcrow/parsec/charstate"
+	"strconv"
 	"testing"
 
 	. "github.com/goghcrow/parsec"
+	. "github.com/goghcrow/parsec/states/charstate"
 )
 
-// -- >  expr    = term   `chainl1` addop
-// -- >  term    = factor `chainl1` mulop
-// -- >  factor  = parens expr <|> integer
-// -- >
-// -- >  mulop   =   do{ symbol "*"; return (*)   }
-// -- >          <|> do{ symbol "/"; return (div) }
-// -- >
-// -- >  addop   =   do{ symbol "+"; return (+) }
-// -- >          <|> do{ symbol "-"; return (-) }
+// expr    = term   `chainl1` addop
+// term    = factor `chainl1` mulop
+// factor  = parens expr <|> integer
+//
+// mulop   =   do{ symbol "*"; return (*)   }
+//
+//	<|> do{ symbol "/"; return (div) }
+//
+// addop   =   do{ symbol "+"; return (+) }
+//
+//	<|> do{ symbol "-"; return (-) }
 func TestLRec(t *testing.T) {
 	applyBinOp := func(op string) func(v interface{}) interface{} {
 		return func(v interface{}) interface{} {
@@ -38,7 +41,7 @@ func TestLRec(t *testing.T) {
 	}
 
 	applyInt := func(v interface{}) interface{} {
-		n, _ := parseInt(v.(string))
+		n, _ := strconv.ParseInt(v.(string), 10, 64)
 		return n
 	}
 
@@ -74,7 +77,7 @@ func TestLRec(t *testing.T) {
 	)
 
 	calc := func(s string) int64 {
-		v, err := ExpectEof(Expr).Parse(NewStrState(s))
+		v, err := ExpectEof(Expr).Parse(NewState(s))
 		if err != nil {
 			panic(err)
 		}

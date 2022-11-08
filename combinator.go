@@ -27,6 +27,7 @@ func Return(v interface{}) Parser {
 	})
 }
 
+// Fail 不消耗 state, 总是失败
 func Fail(f string, a ...interface{}) Parser {
 	return parser(func(s State) (interface{}, error) {
 		return nil, Trap(s.Save(), f, a...)
@@ -72,7 +73,8 @@ func List(ps ...Parser) Parser {
 	})
 }
 
-// Try 支持回溯
+// Try 支持 lookaheadN
+// 错误发生时不消耗 state, 其他跟 p 一样
 func Try(p Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
 		loc := s.Save()
@@ -82,6 +84,20 @@ func Try(p Parser) Parser {
 		}
 		s.Restore(loc)
 		return nil, err
+	})
+}
+
+// LookAhead peek p 的值
+// 如果失败会消费 state, 如果不期望消费可以 LookAhead(Try(p))
+func LookAhead(p Parser) Parser {
+	return parser(func(s State) (interface{}, error) {
+		loc := s.Save()
+		v, err := p.Parse(s)
+		if err != nil {
+			return nil, err
+		}
+		s.Restore(loc)
+		return v, err
 	})
 }
 
@@ -204,6 +220,7 @@ func Chainl1(p, op Parser) Parser {
 	var chainl1Rest func(lval interface{}) Parser
 	chainl1Rest = func(lval interface{}) Parser {
 		opv := Bind(op, func(f interface{}) Parser {
+			// 左结合: 优先匹配 p(即 term), 然后递归的匹配 term op
 			return Bind(p, func(rval interface{}) Parser {
 				fn := f.(func(x, y interface{}) interface{})
 				return chainl1Rest(fn(lval, rval))
@@ -229,6 +246,7 @@ func Chainr(p, op Parser, x interface{}) Parser {
 func Chainr1(p, op Parser) Parser {
 	return Bind(p, func(lval interface{}) Parser {
 		seq := Bind(op, func(f interface{}) Parser {
+			// 右结合就是自然地递归下降
 			return Bind(Chainr1(p, op), func(rval interface{}) Parser {
 				fn := f.(func(x, y interface{}) interface{})
 				return Return(fn(lval, rval))
@@ -240,7 +258,7 @@ func Chainr1(p, op Parser) Parser {
 
 // ===== Tricky Combinators =====
 
-// NotFollowedBy p 匹配失败时成功, 不消耗 state, 可以用来实现最长匹配
+// NotFollowedBy 只有在 p 匹配失败时才成功, 不消耗 state, 可以用来实现最长匹配
 // 例如，在识别 keywords（e.g. let）时，需要确保关键词后面没有合法的标识符(e.g. lets)
 // 可以写成 let := Left(Str("let"), NotFollowedBy(Regex(`[\d\w]+`)))
 // try (do{ c <- try p; unexpected (show c) } <|> return () )
@@ -268,20 +286,6 @@ func ManyTill(p, end Parser) Parser {
 			})
 		}),
 	)
-}
-
-// LookAhead peek p 的值
-// 如果失败会消费 state, 如果不期望消费可以 LookAhead(Try(p))
-func LookAhead(p Parser) Parser {
-	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
-		v, err := p.Parse(s)
-		if err != nil {
-			return nil, err
-		}
-		s.Restore(loc)
-		return v, err
-	})
 }
 
 func ExpectEof(p Parser) Parser { return Left(p, Eof) }

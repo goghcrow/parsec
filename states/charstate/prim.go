@@ -1,4 +1,4 @@
-package chars
+package charstate
 
 import (
 	"regexp"
@@ -64,7 +64,7 @@ func Char(r rune) Parser { return CharSatisfy(equals(r), string(r)) }
 
 func CharSatisfy(pred func(rune) bool, expect string) Parser {
 	return NewParser(func(s_ State) (interface{}, error) {
-		s := s_.(*StrState)
+		s := s_.(*CharState)
 		loc := s.Save()
 		r, ok := s.NextIf(pred)
 		if ok {
@@ -76,7 +76,7 @@ func CharSatisfy(pred func(rune) bool, expect string) Parser {
 
 func Str(str string) Parser {
 	return NewParser(func(s_ State) (interface{}, error) {
-		s := s_.(*StrState)
+		s := s_.(*CharState)
 		for _, c := range str {
 			r, ok := s.NextIf(func(r rune) bool { return r == c })
 			if !ok {
@@ -90,7 +90,7 @@ func Str(str string) Parser {
 func Regex(reg string) Parser {
 	patten := regexp.MustCompile("^" + reg)
 	return NewParser(func(s_ State) (interface{}, error) {
-		s := s_.(*StrState)
+		s := s_.(*CharState)
 		loc := s.Save()
 		found := patten.FindString(string(s.seq[s.Pos:]))
 		if found == "" {

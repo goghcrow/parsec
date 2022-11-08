@@ -8,18 +8,20 @@ import (
 
 	"github.com/goghcrow/go-parsec/lexer"
 	. "github.com/goghcrow/parsec"
-	"github.com/goghcrow/parsec/tokstate"
+	. "github.com/goghcrow/parsec/states/tokstate"
 )
 
-// -- >  expr    = term   `chainl1` addop
-// -- >  term    = factor `chainl1` mulop
-// -- >  factor  = parens expr <|> integer
-// -- >
-// -- >  mulop   =   do{ symbol "*"; return (*)   }
-// -- >          <|> do{ symbol "/"; return (div) }
-// -- >
-// -- >  addop   =   do{ symbol "+"; return (+) }
-// -- >          <|> do{ symbol "-"; return (-) }
+// expr    = term   `chainl1` addop
+// term    = factor `chainl1` mulop
+// factor  = parens expr <|> integer
+//
+// mulop   =   do{ symbol "*"; return (*)   }
+//
+//	<|> do{ symbol "/"; return (div) }
+//
+// addop   =   do{ symbol "+"; return (+) }
+//
+//	<|> do{ symbol "-"; return (-) }
 func TestLRecTokState(t *testing.T) {
 	const (
 		Lp lexer.TokenKind = iota + 1
@@ -80,16 +82,16 @@ func TestLRecTokState(t *testing.T) {
 	Expr.Pattern = Chainr1(Term, Addop)
 	Term.Pattern = Chainr1(Factor, Mulop)
 	Factor.Pattern = Alt(
-		Mid(toks.Str("("), Expr, toks.Str(")")),
-		toks.Tok(Int, "Int").Map(applyInt),
+		Mid(Str("("), Expr, Str(")")),
+		Tok(Int, "Int").Map(applyInt),
 	)
 	Mulop.Pattern = Alt(
-		toks.Str("*").Map(applyBinOp("*")),
-		toks.Str("/").Map(applyBinOp("/")),
+		Str("*").Map(applyBinOp("*")),
+		Str("/").Map(applyBinOp("/")),
 	)
 	Addop.Pattern = Alt(
-		toks.Str("+").Map(applyBinOp("+")),
-		toks.Str("-").Map(applyBinOp("-")),
+		Str("+").Map(applyBinOp("+")),
+		Str("-").Map(applyBinOp("-")),
 	)
 
 	// debug
@@ -115,7 +117,7 @@ func TestLRecTokState(t *testing.T) {
 	}
 
 	calc := func(s string) int64 {
-		v, err := ExpectEof(Expr).Parse(toks.NewTokState(lex.MustLex(s)))
+		v, err := ExpectEof(Expr).Parse(NewState(lex.MustLex(s)))
 		if err != nil {
 			panic(err)
 		}

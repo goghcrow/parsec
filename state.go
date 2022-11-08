@@ -6,6 +6,8 @@ type State interface {
 	Next() (interface{}, bool)
 	Save() Loc
 	Restore(l Loc)
+	Put(interface{})
+	Get() interface{}
 }
 
 type Error struct {

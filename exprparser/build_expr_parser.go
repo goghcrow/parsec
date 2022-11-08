@@ -1,47 +1,15 @@
-package expr
+package exprparser
 
 import . "github.com/goghcrow/parsec"
 
-type Assoc int
-
-const (
-	AssocNone = iota
-	AssocLeft
-	AssocRight
-)
-
-func (a Assoc) String() string { return [...]string{"none", "left", "right"}[a] }
-
-type OperKind int
-
-const (
-	Prefix = iota
-	Postfix
-	Binary
-)
-
-type Operator struct {
-	OperKind
-	// 只有 Binary 需要, 前后缀无结合性
-	Assoc
-	// Prefix、PostFix 必须 返回 func(interface{}) interface{}
-	// Binary 必须 返回 func(l, r interface{}) interface{}
-	Parser
-}
-
-// todo: 可以做一个操作符 build 的函数, 先注册, 然后按优先级 group 再排序
-
-// OperatorTable
-// 📢: 每一层的优先级相同(结合性可能不同), 层之间优先级降序
-type OperatorTable [][]Operator
-
 // BuildExpressionParser 从操作符表(结合性&优先级)构建一个表达式 parser
+// 📢: 每一层的优先级相同(结合性可能不同), 层之间优先级降序
 // 注意:
 // 1. 相同优先级的前缀后缀操作符只能出现一次 (e.g. 如果 - 是代表负数, 则不允许 --2)
 // 2. 相同优先级的前缀后缀操作符优先左关联 (e.g. 如果 ++ 是后缀自增, 则 -2++ 等 -1, 而不是 -3)
 // 具体实例参见 example/buildexpr_test.go
-func BuildExpressionParser(opers OperatorTable, simpleExpr Parser) Parser {
-	p := simpleExpr
+func BuildExpressionParser(opers OperatorTable, term Parser) Parser {
+	p := term
 	for _, ops := range opers {
 		p = makeParser(p, ops)
 	}
@@ -77,11 +45,13 @@ func makeParser(term Parser, ops []Operator) Parser {
 			return Bind(postfixP, func(post interface{}) Parser {
 				postFn := post.(func(interface{}) interface{})
 				preFn := pre.(func(interface{}) interface{})
+				// 📢: 前缀优先于后缀
 				return Return(postFn(preFn(x)))
 			})
 		})
 	})
 
+	// 这里逻辑 跟 Chainr 一致, 只多了歧义处理
 	var rassocP, rassocP1 func(x interface{}) Parser
 	rassocP = func(x interface{}) Parser {
 		return Alt(
@@ -99,6 +69,7 @@ func makeParser(term Parser, ops []Operator) Parser {
 		return Either(rassocP(x), Return(x))
 	}
 
+	// 这里逻辑 跟 Chainl.chainl1Rest 一致, 只多了歧义处理
 	var lassocP, lassocP1 func(x interface{}) Parser
 	lassocP = func(x interface{}) Parser {
 		return Alt(
@@ -119,6 +90,7 @@ func makeParser(term Parser, ops []Operator) Parser {
 	nassocP := func(x interface{}) Parser {
 		return Bind(nassocOp, func(f interface{}) Parser {
 			return Bind(termP, func(y interface{}) Parser {
+				// 与左结合的区别是, 不继续匹配
 				fn := f.(func(x, y interface{}) interface{})
 				return Alt(
 					ambiguousRight,
@@ -144,7 +116,7 @@ func makeParser(term Parser, ops []Operator) Parser {
 func groupByOpers(ops []Operator) (rassoc, lassoc, nassoc, prefix, postfix []Parser) {
 	for _, op := range ops {
 		switch op.OperKind {
-		case Binary:
+		case Infix:
 			switch op.Assoc {
 			case AssocNone:
 				nassoc = append(nassoc, op)

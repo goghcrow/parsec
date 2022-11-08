@@ -1,49 +1,14 @@
-package test
+package example
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
 	. "github.com/goghcrow/parsec"
-	. "github.com/goghcrow/parsec/charstate"
+	. "github.com/goghcrow/parsec/states/charstate"
 )
 
-func TestComment(t *testing.T) {
-	comment := Right(Str("<!--"), ManyTill(Regex(`[\w\s]+`), Str("-->")))
-	v, err := comment.Parse(NewStrState("<!--hello world-->"))
-	if err != nil {
-		panic(err)
-	}
-	expect := "[hello world]"
-	actual := fmt.Sprintf("%s", v)
-	if expect != actual {
-		t.Errorf("expect %s actual %s", expect, actual)
-	}
-}
-
-func TestKeyword(t *testing.T) {
-	let := Left(Str("let"), NotFollowedBy(Regex(`[\d\w]+`)))
-	parse, err := let.Parse(NewStrState("let a = 1"))
-	if err != nil {
-		panic(err)
-	}
-	if parse.(string) != "let" {
-		t.Errorf("expect let actual %s", parse)
-	}
-
-	parse, err = let.Parse(NewStrState("lets go"))
-	if parse != nil {
-		t.Errorf("expect error actual %s", parse)
-	}
-	expect := "unexpect `s` in pos 4 line 1 col 4"
-	actual := err.Error()
-	if actual != expect {
-		t.Errorf("expect error %s actual %s", expect, actual)
-	}
-}
-
-func TestCombinators(t *testing.T) {
+func TestCharStateCombinators(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
 		p      Parser
@@ -55,59 +20,75 @@ func TestCombinators(t *testing.T) {
 		{
 			name:   "nil",
 			p:      Nil,
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "<nil>",
 		},
 		{
 			name:   "any",
 			p:      Any,
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name:  "an!",
 			p:     Any,
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `any` actual end of input in pos 1 line 1 col 1",
 		},
 		{
 			name:   "eof",
 			p:      Eof,
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "<nil>",
 		},
 		{
 			name:  "eof!",
 			p:     Eof,
-			s:     NewStrState("a"),
+			s:     NewState("a"),
 			error: "expect end of input in pos 1 line 1 col 1",
 		},
 		{
 			name: "satisfy!",
 			p: Satisfy(func(i interface{}) bool {
-				return i.(rune) == 'a'
+				r, ok := i.(rune)
+				if ok {
+					return r == 'a'
+				}
+				b, ok := i.(byte)
+				if ok {
+					return b == 'a'
+				}
+				panic("not reached")
 			}, "a"),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name: "satisfy!",
 			p: Satisfy(func(i interface{}) bool {
-				return i.(rune) == 'b'
+				r, ok := i.(rune)
+				if ok {
+					return r == 'b'
+				}
+				b, ok := i.(byte)
+				if ok {
+					return b == 'b'
+				}
+				panic("not reached")
 			}, "b"),
-			s:     NewStrState("a"),
+			s:     NewState("a"),
 			error: "expect `b` actual `a` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "return",
 			p:      Return("a"),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "a",
 		},
 		{
 			name:  "fail",
 			p:     Fail("fail"),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "fail in pos 1 line 1 col 1",
 		},
 		{
@@ -116,7 +97,7 @@ func TestCombinators(t *testing.T) {
 				i, _ := strconv.ParseInt(v.(string), 10, 64)
 				return i
 			}),
-			s:      NewStrState("42"),
+			s:      NewState("42"),
 			expect: "42",
 		},
 		{
@@ -126,7 +107,7 @@ func TestCombinators(t *testing.T) {
 					return Return(a.(string) + b.(string))
 				})
 			}),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "ab",
 		},
 		{
@@ -136,7 +117,7 @@ func TestCombinators(t *testing.T) {
 					return Return(a.(string) + b.(string))
 				})
 			}),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
@@ -144,7 +125,7 @@ func TestCombinators(t *testing.T) {
 			p: Seq(Str("a"), Str("b"), func(a, b interface{}) interface{} {
 				return a.(string) + b.(string)
 			}),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "ab",
 		},
 		{
@@ -152,492 +133,492 @@ func TestCombinators(t *testing.T) {
 			p: Seq(Str("a"), Str("b"), func(a, b interface{}) interface{} {
 				return a.(string) + b.(string)
 			}),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "list",
 			p:      List(),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "[]",
 		},
 		{
 			name:   "list",
 			p:      List(Str("a"), Str("b"), Str("c")),
-			s:      NewStrState("abc"),
+			s:      NewState("abc"),
 			expect: "[a b c]",
 		},
 		{
 			name:  "list!",
 			p:     List(Str("a"), Str("b"), Str("c")),
-			s:     NewStrState("abd"),
+			s:     NewState("abd"),
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:   "try",
 			p:      Try(Str("a")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name:  "try!",
 			p:     Str("abc"),
-			s:     NewStrState("abd"),
+			s:     NewState("abd"),
 			loc:   &Loc{Pos: 2},
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:  "try!",
 			p:     Try(Str("abc")),
-			s:     NewStrState("abd"),
+			s:     NewState("abd"),
 			loc:   &Loc{Pos: 0}, // Try 恢复状态
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:   "either",
 			p:      Either(Str("a"), Str("b")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name:   "either",
 			p:      Either(Str("a"), Str("b")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "b",
 		},
 		{
 			name:  "either!",
 			p:     Either(Str("a"), Str("b")),
-			s:     NewStrState("c"),
+			s:     NewState("c"),
 			error: "expect `b` actual `c` in pos 1 line 1 col 1", // 错误信息不对
 		},
 		{
 			name:  "either!",
 			p:     Label(Either(Str("a"), Str("b")), "expect a or b"), // 用 label 替换错误
-			s:     NewStrState("c"),
+			s:     NewState("c"),
 			error: "expect a or b in pos 1 line 1 col 1",
 		},
 		{
 			name:  "choice!",
 			p:     Choice(),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "no choice in pos 1 line 1 col 1",
 		},
 		{
 			name:   "choice",
 			p:      Choice(Str("a")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name:   "choice",
 			p:      Choice(Str("a"), Str("b")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "b",
 		},
 		{
 			name:  "choice!",
 			p:     Label(Choice(Str("a"), Str("b")), "expect a or b"), // 用 label 修改错误修心
-			s:     NewStrState("c"),
+			s:     NewState("c"),
 			error: "expect a or b in pos 1 line 1 col 1",
 		},
 		{
 			name:   "count",
 			p:      Count(Str("a"), -1),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "[]",
 		},
 		{
 			name:   "count",
 			p:      Count(Str("a"), 0),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "[]",
 		},
 		{
 			name:   "count",
 			p:      Count(Str("a"), 1),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "[a]",
 		},
 		{
 			name:   "count",
 			p:      Count(Str("a"), 3),
-			s:      NewStrState("aaa"),
+			s:      NewState("aaa"),
 			expect: "[a a a]",
 		},
 		{
 			name:  "count!",
 			p:     Count(Str("a"), 1),
-			s:     NewStrState("b"),
+			s:     NewState("b"),
 			error: "expect `a` actual `b` in pos 1 line 1 col 1",
 		},
 		{
 			name:  "count!",
 			p:     Count(Str("a"), 2),
-			s:     NewStrState("ab"),
+			s:     NewState("ab"),
 			error: "expect `a` actual `b` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "between",
 			p:      Between(Str("("), Str(")"), Str("a")),
-			s:      NewStrState("(a)"),
+			s:      NewState("(a)"),
 			expect: "a",
 		},
 		{
 			name:  "between!",
 			p:     Between(Str("("), Str(")"), Str("a")),
-			s:     NewStrState("(b)"),
+			s:     NewState("(b)"),
 			error: "expect `a` actual `b` in pos 2 line 1 col 2",
 		},
 		{
 			name:  "between!",
 			p:     Between(Str("("), Str(")"), Str("a")),
-			s:     NewStrState("(a]"),
+			s:     NewState("(a]"),
 			error: "expect `)` actual `]` in pos 3 line 1 col 3",
 		},
 		{
 			name:   "mid",
 			p:      Mid(Str("("), Str("a"), Str(")")),
-			s:      NewStrState("(a)"),
+			s:      NewState("(a)"),
 			expect: "a",
 		},
 		{
 			name:  "mid!",
 			p:     Mid(Str("("), Str("a"), Str(")")),
-			s:     NewStrState("(b)"),
+			s:     NewState("(b)"),
 			error: "expect `a` actual `b` in pos 2 line 1 col 2",
 		},
 		{
 			name:  "mid!",
 			p:     Mid(Str("("), Str("a"), Str(")")),
-			s:     NewStrState("(a]"),
+			s:     NewState("(a]"),
 			error: "expect `)` actual `]` in pos 3 line 1 col 3",
 		},
 		{
 			name:   "left",
 			p:      Left(Str("a"), Str("b")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "a",
 		},
 		{
 			name:  "left!",
 			p:     Left(Str("a"), Str("b")),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "right",
 			p:      Right(Str("a"), Str("b")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "b",
 		},
 		{
 			name:  "right!",
 			p:     Right(Str("a"), Str("b")),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
-			s:      NewStrState("ba"),
+			s:      NewState("ba"),
 			loc:    &Loc{Pos: 2},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 2},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
-			s:      NewStrState("bab"),
+			s:      NewState("bab"),
 			loc:    &Loc{Pos: 3},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
-			s:      NewStrState("bbabb"),
+			s:      NewState("bbabb"),
 			loc:    &Loc{Pos: 5},
 			expect: "a",
 		},
 		{
 			name:  "trim!",
 			p:     Trim(Str("a"), Str("b")),
-			s:     NewStrState("ca"),
+			s:     NewState("ca"),
 			loc:   &Loc{Pos: 0},
 			error: "expect `a` actual `c` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "option",
 			p:      Option(Str("a"), "x"),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
 			name:   "option!",
 			p:      Option(Str("a"), "x"),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "x",
 		},
 		{
 			name:   "optional",
 			p:      Optional(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "optional",
 			p:      Optional(Str("a")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			loc:    &Loc{Pos: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "optional",
 			p:      Optional(Str("ab")),
-			s:      NewStrState("ac"),
+			s:      NewState("ac"),
 			loc:    &Loc{Pos: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			loc:    &Loc{Pos: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
-			s:      NewStrState("aab"),
+			s:      NewState("aab"),
 			loc:    &Loc{Pos: 2},
 			expect: "<nil>",
 		},
 		{
 			name:  "skipMany1!",
 			p:     SkipMany1(Str("a")),
-			s:     NewStrState("b"),
+			s:     NewState("b"),
 			error: "expect `a` actual `b` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "skipMany1",
 			p:      SkipMany1(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany1",
 			p:      SkipMany1(Str("a")),
-			s:      NewStrState("aab"),
+			s:      NewState("aab"),
 			loc:    &Loc{Pos: 2},
 			expect: "<nil>",
 		},
 		{
 			name:   "many",
 			p:      Many(Str("a")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			expect: "[]",
 		},
 		{
 			name:   "many",
 			p:      Many(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "[a]",
 		},
 		{
 			name:   "many",
 			p:      Many(Str("a")),
-			s:      NewStrState("aab"),
+			s:      NewState("aab"),
 			expect: "[a a]",
 		},
 		{
 			name:  "many1!",
 			p:     Many1(Str("a")),
-			s:     NewStrState("b"),
+			s:     NewState("b"),
 			error: "expect `a` actual `b` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "many1",
 			p:      Many1(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			expect: "[a]",
 		},
 		{
 			name:   "many1",
 			p:      Many1(Str("a")),
-			s:      NewStrState("aab"),
+			s:      NewState("aab"),
 			expect: "[a a]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "[]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			loc:    &Loc{Pos: 1},
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 1}, // 剩余,
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 3},
 			expect: "[a a]",
 		},
 		{
 			name:  "seqBy1!",
 			p:     SepBy1(Str("a"), Str(",")),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			loc:    &Loc{Pos: 1},
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 1}, // 剩余,
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 3},
 			expect: "[a a]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "[]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			loc:    &Loc{Pos: 0}, // 需要消耗 a,
 			expect: "[]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:  "endBy1!",
 			p:     EndBy1(Str("a"), Str(",")),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
 			name:  "endBy1!",
 			p:     EndBy1(Str("a"), Str(",")),
-			s:     NewStrState("a"),
+			s:     NewState("a"),
 			error: "expect `,` actual end of input in pos 2 line 1 col 2",
 		},
 		{
 			name:   "endBy1",
 			p:      EndBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "endBy1",
 			p:      EndBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "[]",
 		},
 		{
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 3},
 			expect: "[a a]",
 		},
 		{
 			name:  "sepEndBy1!",
 			p:     SepEndBy1(Str("a"), Str(",")),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
 			name:   "sepEndBy1",
 			p:      SepEndBy1(Str("a"), Str(",")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy1",
 			p:      SepEndBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,"),
+			s:      NewState("a,"),
 			loc:    &Loc{Pos: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy1",
 			p:      SepEndBy1(Str("a"), Str(",")),
-			s:      NewStrState("a,a"),
+			s:      NewState("a,a"),
 			loc:    &Loc{Pos: 3},
 			expect: "[a a]",
 		},
@@ -648,7 +629,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "x",
 		},
 		{
@@ -658,7 +639,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
@@ -668,7 +649,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+"),
+			s:      NewState("a+"),
 			loc:    &Loc{Pos: 1},
 			expect: "a",
 		},
@@ -679,7 +660,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+a"),
+			s:      NewState("a+a"),
 			expect: "[a a]",
 		},
 		{
@@ -689,7 +670,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+a+a"),
+			s:      NewState("a+a+a"),
 			expect: "[[a a] a]",
 		},
 		{
@@ -699,7 +680,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
@@ -709,7 +690,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
@@ -719,7 +700,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+"),
+			s:      NewState("a+"),
 			loc:    &Loc{Pos: 1},
 			expect: "a",
 		},
@@ -730,7 +711,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+a"),
+			s:      NewState("a+a"),
 			expect: "[a a]",
 		},
 		{
@@ -740,7 +721,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+a+a"),
+			s:      NewState("a+a+a"),
 			expect: "[[a a] a]",
 		},
 		{
@@ -750,7 +731,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState(""),
+			s:      NewState(""),
 			expect: "x",
 		},
 		{
@@ -760,7 +741,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
@@ -770,7 +751,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+"),
+			s:      NewState("a+"),
 			loc:    &Loc{Pos: 1},
 			expect: "a",
 		},
@@ -781,7 +762,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+a"),
+			s:      NewState("a+a"),
 			expect: "[a a]",
 		},
 		{
@@ -791,7 +772,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			}), "x"),
-			s:      NewStrState("a+a+a"),
+			s:      NewState("a+a+a"),
 			expect: "[a [a a]]",
 		},
 		{
@@ -801,7 +782,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
@@ -811,7 +792,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			expect: "a",
 		},
 		{
@@ -821,7 +802,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+"),
+			s:      NewState("a+"),
 			loc:    &Loc{Pos: 1},
 			expect: "a",
 		},
@@ -832,7 +813,7 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+a"),
+			s:      NewState("a+a"),
 			expect: "[a a]",
 		},
 		{
@@ -842,89 +823,89 @@ func TestCombinators(t *testing.T) {
 					return []interface{}{l, r}
 				}
 			})),
-			s:      NewStrState("a+a+a"),
+			s:      NewState("a+a+a"),
 			expect: "[a [a a]]",
 		},
 		{
 			name:  "notFollowedBy!",
 			p:     NotFollowedBy(Str("a")),
-			s:     NewStrState("a"),
+			s:     NewState("a"),
 			loc:   &Loc{Pos: 1},
 			error: "unexpect `a` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "notFollowedBy",
 			p:      NotFollowedBy(Str("a")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			loc:    &Loc{Pos: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "manyTill",
 			p:      ManyTill(Str("a"), Str("b")),
-			s:      NewStrState("b"),
+			s:      NewState("b"),
 			loc:    &Loc{Pos: 1}, // 消耗 b
 			expect: "[]",
 		},
 		{
 			name:   "manyTill",
 			p:      ManyTill(Str("a"), Str("b")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 2}, // 消耗 b
 			expect: "[a]",
 		},
 		{
 			name:  "manyTill!",
 			p:     ManyTill(Str("a"), Str("b")),
-			s:     NewStrState(""),
+			s:     NewState(""),
 			error: "expect `a` actual end of input in pos 1 line 1 col 1",
 		},
 		{
 			name:   "lookAhead",
 			p:      LookAhead(Str("a")),
-			s:      NewStrState("ab"),
+			s:      NewState("ab"),
 			loc:    &Loc{Pos: 0}, // 不消耗
 			expect: "a",
 		},
 		{
 			name:  "lookAhead!",
 			p:     LookAhead(Str("ab")),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			loc:   &Loc{Pos: 1}, // 失败仍旧消耗
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:  "lookAhead!",
 			p:     LookAhead(Try(Str("ab"))),
-			s:     NewStrState("ac"),
+			s:     NewState("ac"),
 			loc:   &Loc{Pos: 0}, // 失败不消耗
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "expectEof",
 			p:      ExpectEof(Str("a")),
-			s:      NewStrState("a"),
+			s:      NewState("a"),
 			loc:    &Loc{Pos: 1},
 			expect: "a",
 		},
 		{
 			name: "expectEof!",
 			p:    ExpectEof(Str("a")),
-			s:    NewStrState("ab"),
+			s:    NewState("ab"),
 			// loc:   &Loc{Pos: 1}, //2
 			error: "expect end of input in pos 2 line 1 col 2",
 		},
 		{
 			name:  "label!",
 			p:     Label(Str("abc"), "expect x"),
-			s:     NewStrState("abd"),
+			s:     NewState("abd"),
 			loc:   &Loc{Pos: 2}, // 已经消费的不替换错误信息
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:  "label!",
 			p:     Label(Try(Str("abc")), "expect x"), // 用 label 替换错误
-			s:     NewStrState("abd"),
+			s:     NewState("abd"),
 			loc:   &Loc{Pos: 0}, // 未消费的替换错误信息
 			error: "expect x in pos 1 line 1 col 1",
 		},
@@ -943,11 +924,7 @@ func TestCombinators(t *testing.T) {
 					t.Errorf("expect \"%s\" actual \"%s\"", tt.error, actual)
 				}
 			} else {
-				r, ok := v.(rune)
-				actual := fmt.Sprintf("%v", v)
-				if ok {
-					actual = string(r)
-				}
+				actual := Show(v) // fmt.Sprintf("%v", v)
 				if actual != tt.expect {
 					t.Errorf("expect \"%s\" actual \"%s\"", tt.expect, actual)
 				}
