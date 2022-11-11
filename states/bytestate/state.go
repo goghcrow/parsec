@@ -16,18 +16,18 @@ const eof byte = 0
 
 type ByteState struct {
 	seq []byte
-	Loc
+	Pos
 	ud interface{}
 }
 
-func (s *ByteState) Save() Loc                 { return s.Loc }
-func (s *ByteState) Restore(l Loc)             { s.Loc = l }
+func (s *ByteState) Save() Pos                 { return s.Pos }
+func (s *ByteState) Restore(l Pos)             { s.Pos = l }
 func (s *ByteState) Next() (interface{}, bool) { return s.NextIf(constTrue) }
 func (s *ByteState) NextIf(pred func(byte) bool) (byte, bool) {
-	if s.Pos >= len(s.seq) {
+	if s.Idx >= len(s.seq) {
 		return eof, false
 	}
-	b := s.seq[s.Pos]
+	b := s.seq[s.Idx]
 	if pred(b) {
 		s.move(b)
 		return b, true
@@ -36,7 +36,7 @@ func (s *ByteState) NextIf(pred func(byte) bool) (byte, bool) {
 	}
 }
 func (s *ByteState) move(b byte) {
-	s.Pos++
+	s.Idx++
 	if b == '\n' {
 		s.Line++
 		s.Col = 0
@@ -44,11 +44,11 @@ func (s *ByteState) move(b byte) {
 		s.Col++
 	}
 }
-func (s *ByteState) trapExpect(loc Loc, expect string, actual byte) error {
+func (s *ByteState) trapExpect(pos Pos, expect string, actual byte) error {
 	if actual == eof {
-		return Trap(loc, "expect `%s` actual end of input", expect)
+		return Trap(pos, "expect `%s` actual end of input", expect)
 	} else {
-		return Trap(loc, "expect `%s` actual `%s`", expect, string(actual))
+		return Trap(pos, "expect `%s` actual `%s`", expect, string(actual))
 	}
 }
 func (s *ByteState) Put(ud interface{}) { s.ud = ud }

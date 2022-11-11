@@ -4,25 +4,25 @@ import "fmt"
 
 type State interface {
 	Next() (interface{}, bool)
-	Save() Loc
-	Restore(l Loc)
+	Save() Pos
+	Restore(l Pos)
 	Put(interface{})
 	Get() interface{}
 }
 
 type Error struct {
-	Loc
+	Pos
 	Msg string
 }
 
-func (e Error) Error() string { return fmt.Sprintf("%s in %s", e.Msg, e.Loc) }
+func (e Error) Error() string { return fmt.Sprintf("%s in %s", e.Msg, e.Pos) }
 
-type Loc struct {
+type Pos struct {
+	Idx  int
 	Col  int
 	Line int
-	Pos  int
 }
 
-func (l Loc) String() string {
-	return fmt.Sprintf("pos %d line %d col %d", l.Pos+1, l.Line+1, l.Col+1)
+func (p Pos) String() string {
+	return fmt.Sprintf("pos %d line %d col %d", p.Idx+1, p.Line+1, p.Col+1)
 }

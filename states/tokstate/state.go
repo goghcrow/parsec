@@ -13,21 +13,21 @@ func NewState(toks []*lexer.Token) parsec.State { return &TokState{seq: toks} }
 
 type TokState struct {
 	seq []*lexer.Token
-	parsec.Loc
+	parsec.Pos
 	ud interface{}
 }
 
-func (t *TokState) Save() parsec.Loc     { return t.Loc }
-func (t *TokState) Restore(l parsec.Loc) { t.Loc = l }
+func (t *TokState) Save() parsec.Pos     { return t.Pos }
+func (t *TokState) Restore(l parsec.Pos) { t.Pos = l }
 func (t *TokState) Next() (interface{}, bool) {
-	if t.Pos >= len(t.seq) {
+	if t.Idx >= len(t.seq) {
 		return nil, false
 	}
 	return t.move(), true
 }
 func (t *TokState) move() *lexer.Token {
-	tok := t.seq[t.Pos]
-	t.Pos++
+	tok := t.seq[t.Idx]
+	t.Idx++
 	t.Col = tok.Col
 	t.Line = tok.Line
 	return tok

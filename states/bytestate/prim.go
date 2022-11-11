@@ -65,12 +65,12 @@ func Char(b byte) Parser { return ByteSatisfy(equals(b), string(b)) }
 func ByteSatisfy(pred func(byte) bool, expect string) Parser {
 	return NewParser(func(s_ State) (interface{}, error) {
 		s := s_.(*ByteState)
-		loc := s.Save()
+		pos := s.Save()
 		r, ok := s.NextIf(pred)
 		if ok {
 			return r, nil
 		}
-		return nil, s.trapExpect(loc, expect, r)
+		return nil, s.trapExpect(pos, expect, r)
 	})
 }
 
@@ -91,10 +91,10 @@ func Regex(reg string) Parser {
 	patten := regexp.MustCompile("^" + reg)
 	return NewParser(func(s_ State) (interface{}, error) {
 		s := s_.(*ByteState)
-		loc := s.Save()
-		found := patten.FindString(string(s.seq[s.Pos:]))
+		pos := s.Save()
+		found := patten.FindString(string(s.seq[s.Idx:]))
 		if found == "" {
-			return nil, Trap(loc, "expect pattern '%s'", reg)
+			return nil, Trap(pos, "expect pattern '%s'", reg)
 		} else {
 			for _, b := range []byte(found) {
 				s.move(b)

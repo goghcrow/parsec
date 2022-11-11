@@ -16,18 +16,18 @@ const eof rune = -1
 
 type CharState struct {
 	seq []rune
-	Loc
+	Pos
 	ud interface{}
 }
 
-func (s *CharState) Save() Loc                 { return s.Loc }
-func (s *CharState) Restore(l Loc)             { s.Loc = l }
+func (s *CharState) Save() Pos                 { return s.Pos }
+func (s *CharState) Restore(l Pos)             { s.Pos = l }
 func (s *CharState) Next() (interface{}, bool) { return s.NextIf(constTrue) }
 func (s *CharState) NextIf(pred func(rune) bool) (rune, bool) {
-	if s.Pos >= len(s.seq) {
+	if s.Idx >= len(s.seq) {
 		return eof, false
 	}
-	r := s.seq[s.Pos]
+	r := s.seq[s.Idx]
 	if pred(r) {
 		s.move(r)
 		return r, true
@@ -36,7 +36,7 @@ func (s *CharState) NextIf(pred func(rune) bool) (rune, bool) {
 	}
 }
 func (s *CharState) move(r rune) {
-	s.Pos++
+	s.Idx++
 	if r == '\n' {
 		s.Line++
 		s.Col = 0
@@ -44,11 +44,11 @@ func (s *CharState) move(r rune) {
 		s.Col++
 	}
 }
-func (s *CharState) trapExpect(loc Loc, expect string, actual rune) error {
+func (s *CharState) trapExpect(pos Pos, expect string, actual rune) error {
 	if actual == eof {
-		return Trap(loc, "expect `%s` actual end of input", expect)
+		return Trap(pos, "expect `%s` actual end of input", expect)
 	} else {
-		return Trap(loc, "expect `%s` actual `%s`", expect, string(actual))
+		return Trap(pos, "expect `%s` actual `%s`", expect, string(actual))
 	}
 }
 func (s *CharState) Put(ud interface{}) { s.ud = ud }

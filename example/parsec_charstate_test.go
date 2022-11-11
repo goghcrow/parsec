@@ -15,7 +15,7 @@ func TestCharStateCombinators(t *testing.T) {
 		s      State
 		expect string
 		error  string
-		loc    *Loc
+		pos    *Pos
 	}{
 		{
 			name:   "nil",
@@ -164,14 +164,14 @@ func TestCharStateCombinators(t *testing.T) {
 			name:  "try!",
 			p:     Str("abc"),
 			s:     NewState("abd"),
-			loc:   &Loc{Pos: 2},
+			pos:   &Pos{Idx: 2},
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:  "try!",
 			p:     Try(Str("abc")),
 			s:     NewState("abd"),
-			loc:   &Loc{Pos: 0}, // Try 恢复状态
+			pos:   &Pos{Idx: 0}, // Try 恢复状态
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
@@ -322,35 +322,35 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
 			s:      NewState("ba"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
 			s:      NewState("bab"),
-			loc:    &Loc{Pos: 3},
+			pos:    &Pos{Idx: 3},
 			expect: "a",
 		},
 		{
 			name:   "trim",
 			p:      Trim(Str("a"), Str("b")),
 			s:      NewState("bbabb"),
-			loc:    &Loc{Pos: 5},
+			pos:    &Pos{Idx: 5},
 			expect: "a",
 		},
 		{
 			name:  "trim!",
 			p:     Trim(Str("a"), Str("b")),
 			s:     NewState("ca"),
-			loc:   &Loc{Pos: 0},
+			pos:   &Pos{Idx: 0},
 			error: "expect `a` actual `c` in pos 1 line 1 col 1",
 		},
 		{
@@ -369,42 +369,42 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "optional",
 			p:      Optional(Str("a")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "optional",
 			p:      Optional(Str("a")),
 			s:      NewState("b"),
-			loc:    &Loc{Pos: 0},
+			pos:    &Pos{Idx: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "optional",
 			p:      Optional(Str("ab")),
 			s:      NewState("ac"),
-			loc:    &Loc{Pos: 0},
+			pos:    &Pos{Idx: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
 			s:      NewState("b"),
-			loc:    &Loc{Pos: 0},
+			pos:    &Pos{Idx: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany",
 			p:      SkipMany(Str("a")),
 			s:      NewState("aab"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "<nil>",
 		},
 		{
@@ -417,14 +417,14 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "skipMany1",
 			p:      SkipMany1(Str("a")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "<nil>",
 		},
 		{
 			name:   "skipMany1",
 			p:      SkipMany1(Str("a")),
 			s:      NewState("aab"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "<nil>",
 		},
 		{
@@ -473,21 +473,21 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
 			s:      NewState("a"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 1}, // 剩余,
+			pos:    &Pos{Idx: 1}, // 剩余,
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy",
 			p:      SepBy(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 3},
+			pos:    &Pos{Idx: 3},
 			expect: "[a a]",
 		},
 		{
@@ -500,21 +500,21 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
 			s:      NewState("a"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 1}, // 剩余,
+			pos:    &Pos{Idx: 1}, // 剩余,
 			expect: "[a]",
 		},
 		{
 			name:   "seqBy1",
 			p:      SepBy1(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 3},
+			pos:    &Pos{Idx: 3},
 			expect: "[a a]",
 		},
 		{
@@ -527,21 +527,21 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
 			s:      NewState("a"),
-			loc:    &Loc{Pos: 0}, // 需要消耗 a,
+			pos:    &Pos{Idx: 0}, // 需要消耗 a,
 			expect: "[]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "endBy",
 			p:      EndBy(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
@@ -560,14 +560,14 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "endBy1",
 			p:      EndBy1(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "endBy1",
 			p:      EndBy1(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
@@ -586,14 +586,14 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy",
 			p:      SepEndBy(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 3},
+			pos:    &Pos{Idx: 3},
 			expect: "[a a]",
 		},
 		{
@@ -612,14 +612,14 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "sepEndBy1",
 			p:      SepEndBy1(Str("a"), Str(",")),
 			s:      NewState("a,"),
-			loc:    &Loc{Pos: 2},
+			pos:    &Pos{Idx: 2},
 			expect: "[a]",
 		},
 		{
 			name:   "sepEndBy1",
 			p:      SepEndBy1(Str("a"), Str(",")),
 			s:      NewState("a,a"),
-			loc:    &Loc{Pos: 3},
+			pos:    &Pos{Idx: 3},
 			expect: "[a a]",
 		},
 		{
@@ -650,7 +650,7 @@ func TestCharStateCombinators(t *testing.T) {
 				}
 			}), "x"),
 			s:      NewState("a+"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "a",
 		},
 		{
@@ -701,7 +701,7 @@ func TestCharStateCombinators(t *testing.T) {
 				}
 			})),
 			s:      NewState("a+"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "a",
 		},
 		{
@@ -752,7 +752,7 @@ func TestCharStateCombinators(t *testing.T) {
 				}
 			}), "x"),
 			s:      NewState("a+"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "a",
 		},
 		{
@@ -803,7 +803,7 @@ func TestCharStateCombinators(t *testing.T) {
 				}
 			})),
 			s:      NewState("a+"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "a",
 		},
 		{
@@ -830,28 +830,28 @@ func TestCharStateCombinators(t *testing.T) {
 			name:  "notFollowedBy!",
 			p:     NotFollowedBy(Str("a")),
 			s:     NewState("a"),
-			loc:   &Loc{Pos: 1},
+			pos:   &Pos{Idx: 1},
 			error: "unexpect `a` in pos 1 line 1 col 1",
 		},
 		{
 			name:   "notFollowedBy",
 			p:      NotFollowedBy(Str("a")),
 			s:      NewState("b"),
-			loc:    &Loc{Pos: 0},
+			pos:    &Pos{Idx: 0},
 			expect: "<nil>",
 		},
 		{
 			name:   "manyTill",
 			p:      ManyTill(Str("a"), Str("b")),
 			s:      NewState("b"),
-			loc:    &Loc{Pos: 1}, // 消耗 b
+			pos:    &Pos{Idx: 1}, // 消耗 b
 			expect: "[]",
 		},
 		{
 			name:   "manyTill",
 			p:      ManyTill(Str("a"), Str("b")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 2}, // 消耗 b
+			pos:    &Pos{Idx: 2}, // 消耗 b
 			expect: "[a]",
 		},
 		{
@@ -864,58 +864,58 @@ func TestCharStateCombinators(t *testing.T) {
 			name:   "lookAhead",
 			p:      LookAhead(Str("a")),
 			s:      NewState("ab"),
-			loc:    &Loc{Pos: 0}, // 不消耗
+			pos:    &Pos{Idx: 0}, // 不消耗
 			expect: "a",
 		},
 		{
 			name:  "lookAhead!",
 			p:     LookAhead(Str("ab")),
 			s:     NewState("ac"),
-			loc:   &Loc{Pos: 1}, // 失败仍旧消耗
+			pos:   &Pos{Idx: 1}, // 失败仍旧消耗
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:  "lookAhead!",
 			p:     LookAhead(Try(Str("ab"))),
 			s:     NewState("ac"),
-			loc:   &Loc{Pos: 0}, // 失败不消耗
+			pos:   &Pos{Idx: 0}, // 失败不消耗
 			error: "expect `b` actual `c` in pos 2 line 1 col 2",
 		},
 		{
 			name:   "expectEof",
 			p:      ExpectEof(Str("a")),
 			s:      NewState("a"),
-			loc:    &Loc{Pos: 1},
+			pos:    &Pos{Idx: 1},
 			expect: "a",
 		},
 		{
 			name: "expectEof!",
 			p:    ExpectEof(Str("a")),
 			s:    NewState("ab"),
-			// loc:   &Loc{Pos: 1}, //2
+			// pos:   &Pos{Idx: 1}, //2
 			error: "expect end of input in pos 2 line 1 col 2",
 		},
 		{
 			name:  "label!",
 			p:     Label(Str("abc"), "expect x"),
 			s:     NewState("abd"),
-			loc:   &Loc{Pos: 2}, // 已经消费的不替换错误信息
+			pos:   &Pos{Idx: 2}, // 已经消费的不替换错误信息
 			error: "expect `c` actual `d` in pos 3 line 1 col 3",
 		},
 		{
 			name:  "label!",
 			p:     Label(Try(Str("abc")), "expect x"), // 用 label 替换错误
 			s:     NewState("abd"),
-			loc:   &Loc{Pos: 0}, // 未消费的替换错误信息
+			pos:   &Pos{Idx: 0}, // 未消费的替换错误信息
 			error: "expect x in pos 1 line 1 col 1",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			v, err := tt.p.Parse(tt.s)
-			if tt.loc != nil {
-				actual := tt.s.Save().Pos
-				if actual != tt.loc.Pos {
-					t.Errorf("expect pos %d actual pos %d", tt.loc.Pos, actual)
+			if tt.pos != nil {
+				actual := tt.s.Save().Idx
+				if actual != tt.pos.Idx {
+					t.Errorf("expect pos %d actual pos %d", tt.pos.Idx, actual)
 				}
 			}
 			if err != nil {

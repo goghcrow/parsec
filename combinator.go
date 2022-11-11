@@ -77,12 +77,12 @@ func List(ps ...Parser) Parser {
 // 错误发生时不消耗 state, 其他跟 p 一样
 func Try(p Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		v, err := p.Parse(s)
 		if err == nil {
 			return v, nil
 		}
-		s.Restore(loc)
+		s.Restore(pos)
 		return nil, err
 	})
 }
@@ -91,12 +91,12 @@ func Try(p Parser) Parser {
 // 如果失败会消费 state, 如果不期望消费可以 LookAhead(Try(p))
 func LookAhead(p Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		v, err := p.Parse(s)
 		if err != nil {
 			return nil, err
 		}
-		s.Restore(loc)
+		s.Restore(pos)
 		return v, err
 	})
 }
@@ -264,12 +264,12 @@ func Chainr1(p, op Parser) Parser {
 // try (do{ c <- try p; unexpected (show c) } <|> return () )
 func NotFollowedBy(p Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		c, err := p.Parse(s)
 		if err == nil {
-			return nil, Trap(loc, "unexpect `%s`", Show(c))
+			return nil, Trap(pos, "unexpect `%s`", Show(c))
 		}
-		s.Restore(loc)
+		s.Restore(pos)
 		return nil, nil
 	})
 }
@@ -296,11 +296,11 @@ func ExpectEof(p Parser) Parser { return Left(p, Eof) }
 // 通常用在一组 alternatives 最后, 展示更高层的信息, 而不是 alt 最后的错误信息
 func Label(p Parser, fmt string, a ...interface{}) Parser {
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		v, err := p.Parse(s)
 		if err != nil {
-			if loc == s.Save() {
-				return nil, Trap(loc, fmt, a...)
+			if pos == s.Save() {
+				return nil, Trap(pos, fmt, a...)
 			} else {
 				return nil, err
 			}
@@ -318,10 +318,10 @@ func Trace(p Parser, trace func(error, interface{}, []interface{})) Parser {
 			trace(err, v, nil)
 			return nil, err
 		}
-		loc := s.Save()
+		pos := s.Save()
 		xs, _ := Left(Many(Any), Eof).Parse(s)
 		trace(nil, v, xs.([]interface{}))
-		s.Restore(loc)
+		s.Restore(pos)
 		return v, nil
 	})
 }

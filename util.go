@@ -10,8 +10,8 @@ func Cons(x, xs interface{}) interface{} {
 	return append([]interface{}{x}, xs.([]interface{})...)
 }
 
-func Trap(loc Loc, f string, a ...interface{}) Error {
-	return Error{loc, fmt.Sprintf(f, a...)}
+func Trap(pos Pos, f string, a ...interface{}) Error {
+	return Error{pos, fmt.Sprintf(f, a...)}
 }
 
 func Show(i interface{}) string {

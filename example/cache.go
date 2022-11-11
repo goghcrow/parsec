@@ -29,13 +29,13 @@ func getCache(s parsec.State) cache {
 type cacheItem struct {
 	result interface{} //result or error
 	err    error
-	rest   parsec.Loc
+	rest   parsec.Pos
 }
 
 type cache map[string]*cacheItem
 
 func (c cache) key(p parsec.Parser, s parsec.State) string {
-	return fmt.Sprintf("%p_%d", p, s.Save().Pos)
+	return fmt.Sprintf("%p_%d", p, s.Save().Idx)
 }
 
 func (c cache) get(p parsec.Parser, s parsec.State) *cacheItem {

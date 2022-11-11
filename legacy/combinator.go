@@ -8,10 +8,10 @@ import . "github.com/goghcrow/parsec"
 // 一些展开或者迭代的版本, 性能会好点
 
 var Eof = parser(func(s State) (interface{}, error) {
-	loc := s.Save()
+	pos := s.Save()
 	r, ok := s.Next()
 	if ok {
-		return r, Trap(loc, "expect end of input")
+		return r, Trap(pos, "expect end of input")
 	}
 	return nil, nil
 })
@@ -38,14 +38,14 @@ func Choice(ps ...Parser) Parser {
 		return ps[0]
 	}
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		for _, p := range ps {
 			v, err := Try(p).Parse(s)
 			if err == nil {
 				return v, nil
 			}
 		}
-		return nil, Trap(loc, "no choice")
+		return nil, Trap(pos, "no choice")
 	})
 }
 
@@ -171,7 +171,7 @@ func SepBy1(p, sep Parser) Parser {
 
 func ManyTill(p, end Parser) Parser {
 	return parser(func(s State) (interface{}, error) {
-		loc := s.Save()
+		pos := s.Save()
 		var xs []interface{}
 		for {
 			_, err := end.Parse(s)
@@ -181,7 +181,7 @@ func ManyTill(p, end Parser) Parser {
 
 			x, err := p.Parse(s)
 			if err != nil {
-				s.Restore(loc)
+				s.Restore(pos)
 				return nil, err
 			}
 			xs = append(xs, x)
@@ -193,18 +193,18 @@ func ManyTill(p, end Parser) Parser {
 //func Str(str string) Parser {
 //	return parser(func(s_ State) (interface{}, error) {
 //		s := s_.(*StrState)
-//		loc := s.Save()
+//		pos := s.Save()
 //		cnt := utf8.RuneCountInString(str)
-//		if len(s.seq) < s.Pos+cnt {
-//			return nil, Trap(loc, "expect `%s` actual end of input", str)
+//		if len(s.seq) < s.Idx+cnt {
+//			return nil, Trap(pos, "expect `%s` actual end of input", str)
 //		}
-//		if str == string(s.seq[s.Pos:s.Pos+cnt]) {
+//		if str == string(s.seq[s.Idx:s.Idx+cnt]) {
 //			for _, r := range []rune(str) {
 //				s.move(r)
 //			}
 //			return str, nil
 //		} else {
-//			return nil, Trap(loc, "expect `%s`", str)
+//			return nil, Trap(pos, "expect `%s`", str)
 //		}
 //	})
 //}
