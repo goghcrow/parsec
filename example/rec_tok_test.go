@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/goghcrow/go-parsec/lexer"
+	"github.com/goghcrow/lexer"
 	. "github.com/goghcrow/parsec"
 	. "github.com/goghcrow/parsec/states/tokstate"
 )

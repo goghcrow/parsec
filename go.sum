@@ -1,2 +1,2 @@
-github.com/goghcrow/go-parsec v0.0.0-20221104150218-1f6543ebe541 h1:Q9TmiE1u70VGicJtMfvWBdghA7EsJeZlz5gBL6ypfoM=
-github.com/goghcrow/go-parsec v0.0.0-20221104150218-1f6543ebe541/go.mod h1:95CRPUQY4MNgbROBPrDM2rDeGq27crmi07dgTjN13EE=
+github.com/goghcrow/lexer v0.0.0-20230122154617-6c59c769543e h1:6/o7XYz9mm0P1ZPN9Uv5bV2yaUElfXQTW35H6R+Cii8=
+github.com/goghcrow/lexer v0.0.0-20230122154617-6c59c769543e/go.mod h1:kDVf/pex11grN/mgN7VvfPxuAP+GWPBXispHMTNb8NA=

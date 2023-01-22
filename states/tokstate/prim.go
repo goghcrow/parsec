@@ -1,7 +1,7 @@
 package tokstate
 
 import (
-	"github.com/goghcrow/go-parsec/lexer"
+	"github.com/goghcrow/lexer"
 	"github.com/goghcrow/parsec"
 )
 
