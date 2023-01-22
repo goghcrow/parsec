@@ -97,7 +97,7 @@ func Regex(reg string) Parser {
 			return nil, Trap(pos, "expect pattern '%s'", reg)
 		} else {
 			for _, r := range found {
-				s.move(r)
+				s.forward(r)
 			}
 			return found, nil
 		}

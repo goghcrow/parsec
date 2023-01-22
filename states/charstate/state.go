@@ -29,13 +29,13 @@ func (s *CharState) NextIf(pred func(rune) bool) (rune, bool) {
 	}
 	r := s.seq[s.Idx]
 	if pred(r) {
-		s.move(r)
+		s.forward(r)
 		return r, true
 	} else {
 		return r, false
 	}
 }
-func (s *CharState) move(r rune) {
+func (s *CharState) forward(r rune) {
 	s.Idx++
 	if r == '\n' {
 		s.Line++

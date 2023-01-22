@@ -200,7 +200,7 @@ func ManyTill(p, end Parser) Parser {
 //		}
 //		if str == string(s.seq[s.Idx:s.Idx+cnt]) {
 //			for _, r := range []rune(str) {
-//				s.move(r)
+//				s.forward(r)
 //			}
 //			return str, nil
 //		} else {

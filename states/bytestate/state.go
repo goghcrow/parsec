@@ -29,13 +29,13 @@ func (s *ByteState) NextIf(pred func(byte) bool) (byte, bool) {
 	}
 	b := s.seq[s.Idx]
 	if pred(b) {
-		s.move(b)
+		s.forward(b)
 		return b, true
 	} else {
 		return b, false
 	}
 }
-func (s *ByteState) move(b byte) {
+func (s *ByteState) forward(b byte) {
 	s.Idx++
 	if b == '\n' {
 		s.Line++

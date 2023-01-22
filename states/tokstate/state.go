@@ -23,9 +23,9 @@ func (t *TokState) Next() (interface{}, bool) {
 	if t.Idx >= len(t.seq) {
 		return nil, false
 	}
-	return t.move(), true
+	return t.forward(), true
 }
-func (t *TokState) move() *lexer.Token {
+func (t *TokState) forward() *lexer.Token {
 	tok := t.seq[t.Idx]
 	t.Idx++
 	t.Col = tok.Col
