@@ -1,6 +1,7 @@
 package bytestate
 
 import (
+	"github.com/goghcrow/lexer"
 	"regexp"
 	"strings"
 
@@ -36,24 +37,11 @@ var (
 
 	Tab = Char('\t')
 
-	LitFloat = Regex(
-		"(?:[+-]?(?:0|[1-9][0-9]*)(?:[.][0-9]+)+(?:[eE][-+]?[0-9]+)?)" +
-			"|" +
-			"(?:[+-]?(?:0|[1-9][0-9]*)(?:[.][0-9]+)?(?:[eE][-+]?[0-9]+)+)",
-	)
-	LitInt = Regex("(?:[+-]?0b(?:0|1[0-1]*))" +
-		"|" +
-		"(?:[+-]?0x(?:0|[1-9a-fA-F][0-9a-fA-F]*))" +
-		"|" +
-		"(?:[+-]?0o(?:0|[1-7][0-7]*))" +
-		"|" +
-		"(?:[+-]?(?:0|[1-9][0-9]*))",
-	)
-	LitStr = Regex("(?:\"(?:[^\"\\\\]*|\\\\[\"\\\\trnbf\\/]|\\\\u[0-9a-fA-F]{4})*\")" +
-		"|" +
-		"(?:`[^`]*`)",
-	)
-	Ident = Regex("[a-zA-Z\\p{L}_][a-zA-Z0-9\\p{L}_]*") // 支持 unicode
+	LitFloat = Regex(lexer.RegFloat)
+	LitInt   = Regex(lexer.RegInt)
+	LitNum   = Either(LitFloat, LitInt)
+	LitStr   = Regex(lexer.RegStr)
+	Ident    = Regex(lexer.RegIdent) // 支持 unicode
 )
 
 func OneOf(bytes string) Parser  { return ByteSatisfy(oneOf(bytes), "one of '"+bytes+"'") }
@@ -88,7 +76,7 @@ func Str(str string) Parser {
 }
 
 func Regex(reg string) Parser {
-	patten := regexp.MustCompile("^" + reg)
+	patten := regexp.MustCompile("^(?:" + reg + ")")
 	return NewParser(func(s_ State) (interface{}, error) {
 		s := s_.(*ByteState)
 		pos := s.Save()
